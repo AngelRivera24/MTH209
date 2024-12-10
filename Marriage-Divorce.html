@@ -1,0 +1,729 @@
+---
+title: "Marriage & Divorce"
+subtitle: "An Analysis of Factors that are associated with Marriage & Divorce"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: 
+      version: 4
+      bootswatch: yeti
+    orientation: columns
+    vertical_layout: fill
+    source_code: embed
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(DT)
+library(plotly)
+
+divorce<- read.csv("/Users/angelrivera/Desktop/MTH 209/Final Project/divorce.csv")
+divorce_text<- read.csv("/Users/angelrivera/Desktop/MTH 209/Final Project/Divorce_README.csv")
+arguments_text<- read.csv("/Users/angelrivera/Desktop/MTH 209/Final Project/arguments_text.csv")
+time_text<- read.csv("/Users/angelrivera/Desktop/MTH 209/Final Project/time_text.csv")
+goals_text<- read.csv("/Users/angelrivera/Desktop/MTH 209/Final Project/goals_text.csv")
+knowledge_text<- read.csv("/Users/angelrivera/Desktop/MTH 209/Final Project/knowledge_text.csv")
+
+#renaming Divorce_Y_N to "marital_status"
+divorce<- rename(divorce,
+                 Marital_Status = Divorce_Y_N)
+
+#recoding divorce to "divorce" and "married"
+divorce$Marital_Status<- recode(divorce$Marital_Status,
+                             `1`="divorced",
+                             `0`= "married")
+
+#putting Marital_Status at the beginning
+divorce<- select(divorce, Marital_Status,everything())
+
+#assigning numbers to variables to correspond with numbered questions
+divorce<- rename(divorce,
+                 Apology_ends_1=Sorry_end,
+                 Ignore_diff_2=Ignore_diff,
+                 Begin_correct_3=begin_correct,
+                 Contact_4=Contact,
+                 Time_special_5=Special_time,
+                 No_home_time_6=No_home_time,
+                 Strangers_7=X2_strangers,
+                 Enjoy_holiday_8=enjoy_holiday,
+                 Enjoy_travel_9=enjoy_travel,
+                 Common_goals_10=common_goals,
+                 Harmony_11=harmony,
+                 Freedom_12=freeom_value,
+                 Entertainment_13=entertain,
+                 People_goals_14=people_goals,
+                 Dreams_15=dreams,
+                 Love_16=love,
+                 Happy_17=happy,
+                 Marriage_18=marriage,
+                 Roles_19=roles,
+                 Trust_20=trust,
+                 Likes_21=likes,
+                 Care_sick_22=care_sick,
+                 Fav_food_23=fav_food,
+                 Stresses_24=stresses,
+                 Inner_world_25=inner_world,
+                 Anxieties_26=anxieties,
+                 Current_sources_stress_27=current_stress,
+                 Hopes_wishes_28=hopes_wishes,
+                 Know_well_29=know_well,
+                 Friends_social_30=friends_social,
+                 Argue_aggressive_31=Aggro_argue,
+                 Always_never_32=Always_never,
+                 Negative_statements_33=negative_personality,
+                 Offensive_expressions_34=offensive_expressions,
+                 Insult_35=insult,
+                 Humiliate_36=humiliate,
+                 Not_calm_37=not_calm,
+                 Hate_opening_38=hate_subjects,
+                 Discussion_sudden_39=sudden_discussion,
+                 Starting_idk_40=idk_what.s_going_on,
+                 Calm_breaks_41=calm_breaks,
+                 Argue_leave_42=argue_then_leave,
+                 Silent_calm_43=silent_for_calm,
+                 Good_leave_44=good_to_leave_home,
+                 Stay_silent_45=silence_instead_of_discussion,
+                 Silent_hurt_46=silence_for_harm,
+                 Silence_anger_47=silence_fear_anger,
+                 Im_right_48=I.m_right,
+                 Accused_49=accusations,
+                 Not_guilty_50=I.m_not_guilty,
+                 Not_wrong_51=I.m_not_wrong,
+                 Tell_inadequacy_52=no_hesitancy_inadequate,
+                 Remind_inadequacy_53=you.re_inadequate,
+                 Tell_incompetence_54=incompetence)
+
+
+#trying out code (can be deleted)
+ggplot(divorce,
+       aes(y= No_home_time_6))+
+  geom_bar()
+
+#random statistics using tables and means (can probably be used more later)
+attach(divorce)
+divorce %>% group_by(Marital_Status) %>%
+  summarize(mean(Not_calm_37, na.rm = T))
+
+table(Common_goals_10,Marital_Status)
+table(Fav_food_23,Marital_Status)
+table(Not_calm_37,Marital_Status)
+
+#summarizing 'Knowledge of Spouse'
+names(divorce)
+#average scores for "Knowledge of Spouse" for each category for married couples
+married_knowledge<-group_by(divorce,Marital_Status) %>%
+  summarize(
+    ave_likes_21=mean(Likes_21),
+    ave_Care_sick_22=mean(Care_sick_22),
+    ave_Fav_food_23=mean(Fav_food_23),
+    ave_Stresses_24=mean(Stresses_24),
+    ave_Inner_world_25=mean(Inner_world_25),
+    ave_Anxieties_26=mean(Anxieties_26),
+    ave_Current_sources_stress_27=mean(Current_sources_stress_27),
+    ave_Hopes_wishes_28=mean(Hopes_wishes_28),
+    ave_Know_well_29=mean(Know_well_29),
+    ave_Friends_social_30=mean(Friends_social_30))%>%
+  filter(Marital_Status == "married")
+
+#overall "Knowledge of Spouse" score for married couples
+married_knowledge_score<- rowMeans(married_knowledge[,c("ave_likes_21","ave_Care_sick_22","ave_Fav_food_23","ave_Stresses_24","ave_Inner_world_25","ave_Anxieties_26","ave_Current_sources_stress_27","ave_Hopes_wishes_28","ave_Know_well_29","ave_Friends_social_30")])
+
+#average scores for "Knowledge of Spouse" for each category for divorced couples
+divorced_knowledge<-group_by(divorce,Marital_Status) %>%
+  summarize(
+    ave_likes_21=mean(Likes_21),
+    ave_Care_sick_22=mean(Care_sick_22),
+    ave_Fav_food_23=mean(Fav_food_23),
+    ave_Stresses_24=mean(Stresses_24),
+    ave_Inner_world_25=mean(Inner_world_25),
+    ave_Anxieties_26=mean(Anxieties_26),
+    ave_Current_sources_stress_27=mean(Current_sources_stress_27),
+    ave_Hopes_wishes_28=mean(Hopes_wishes_28),
+    ave_Know_well_29=mean(Know_well_29),
+    ave_Friends_social_30=mean(Friends_social_30))%>%
+  filter(Marital_Status == "divorced")
+
+divorced_knowledge_score<- rowMeans(divorced_knowledge[,c("ave_likes_21","ave_Care_sick_22","ave_Fav_food_23","ave_Stresses_24","ave_Inner_world_25","ave_Anxieties_26","ave_Current_sources_stress_27","ave_Hopes_wishes_28","ave_Know_well_29","ave_Friends_social_30")])
+
+#average scores for "Goals & Values"
+married_goals<- group_by(divorce, Marital_Status) %>%
+  summarize(
+    ave_Common_goals_10= mean(Common_goals_10),
+    ave_Harmony_11=mean(Harmony_11),
+    ave_Freedom_12=mean(Freedom_12),
+    ave_Entertainment_13=mean(Entertainment_13),
+    ave_People_goals_14=mean(People_goals_14),
+    ave_Dreams_15=mean(Dreams_15),
+    ave_Love_16=mean(Love_16),
+    ave_Happy_17=mean(Happy_17),
+    ave_Marriage_18=mean(Marriage_18),
+    ave_Roles_19=mean(Roles_19),
+    ave_Trust_20=mean(Trust_20))%>%
+  filter(Marital_Status=="married")
+
+married_goals_score<- rowMeans(married_goals[,c("ave_Common_goals_10","ave_Harmony_11","ave_Freedom_12","ave_Entertainment_13","ave_People_goals_14","ave_Dreams_15","ave_Love_16","ave_Happy_17","ave_Marriage_18","ave_Roles_19","ave_Trust_20")])
+
+divorced_goals<- group_by(divorce, Marital_Status) %>%
+  summarize(
+    ave_Common_goals_10= mean(Common_goals_10),
+    ave_Harmony_11=mean(Harmony_11),
+    ave_Freedom_12=mean(Freedom_12),
+    ave_Entertainment_13=mean(Entertainment_13),
+    ave_People_goals_14=mean(People_goals_14),
+    ave_Dreams_15=mean(Dreams_15),
+    ave_Love_16=mean(Love_16),
+    ave_Happy_17=mean(Happy_17),
+    ave_Marriage_18=mean(Marriage_18),
+    ave_Roles_19=mean(Roles_19),
+    ave_Trust_20=mean(Trust_20))%>%
+  filter(Marital_Status=="divorced")
+
+divorced_goals_score<- rowMeans(divorced_goals[,c("ave_Common_goals_10","ave_Harmony_11","ave_Freedom_12","ave_Entertainment_13","ave_People_goals_14","ave_Dreams_15","ave_Love_16","ave_Happy_17","ave_Marriage_18","ave_Roles_19","ave_Trust_20")])
+
+#average scores for "Quality of Arguments"
+married_arguments<- group_by(divorce, Marital_Status)%>%
+  summarize(
+    ave_Argue_aggressive_31=mean(Argue_aggressive_31),
+    ave_Always_never_32=mean(Always_never_32),
+    ave_Negative_statements_33=mean(Negative_statements_33),
+    ave_Offensive_expressions_34=mean(Offensive_expressions_34),
+    ave_Insult_35=mean(Insult_35),
+    ave_Humiliate_36=mean(Humiliate_36),
+    ave_Not_calm_37=mean(Not_calm_37),
+    ave_Hate_opening_38=mean(Hate_opening_38),
+    ave_Discussion_sudden_39=mean(Discussion_sudden_39),
+    ave_Starting_idk_40=mean(Starting_idk_40),
+    ave_Calm_breaks_41=mean(Calm_breaks_41),
+    ave_Argue_leave_42=mean(Argue_leave_42),
+    ave_Silent_calm_43=mean(Silent_calm_43),
+    ave_Good_leave_44=mean(Good_leave_44),
+    ave_Stay_silent_45=mean(Stay_silent_45),
+    ave_Silent_hurt_46=mean(Silent_hurt_46),
+    ave_Silence_anger_47=mean(Silence_anger_47),
+    ave_Im_right_48=mean(Im_right_48),
+    ave_Accused_49=mean(Accused_49),
+    ave_Not_guilty_50=mean(Not_guilty_50),
+    ave_Not_wrong_51=mean(Not_wrong_51),
+    ave_Tell_inadequacy_52=mean(Tell_inadequacy_52),
+    ave_Remind_inadequacy_53=mean(Remind_inadequacy_53),
+    ave_Tell_incompetence_54=mean(Tell_incompetence_54))%>%
+  filter(Marital_Status== "married")
+
+married_arguments_score<- rowMeans(married_arguments[,c("ave_Argue_aggressive_31", "ave_Always_never_32", "ave_Negative_statements_33","ave_Offensive_expressions_34", "ave_Insult_35", "ave_Humiliate_36", "ave_Not_calm_37", "ave_Hate_opening_38", "ave_Discussion_sudden_39", "ave_Starting_idk_40", "ave_Calm_breaks_41", "ave_Argue_leave_42", "ave_Silent_calm_43", "ave_Good_leave_44", "ave_Stay_silent_45", "ave_Silent_hurt_46", "ave_Silence_anger_47", "ave_Im_right_48", "ave_Accused_49", "ave_Not_guilty_50", "ave_Not_wrong_51", "ave_Tell_inadequacy_52", "ave_Remind_inadequacy_53", "ave_Tell_incompetence_54")])
+
+divorced_arguments<- group_by(divorce, Marital_Status)%>%
+  summarize(
+    ave_Argue_aggressive_31=mean(Argue_aggressive_31),
+    ave_Always_never_32=mean(Always_never_32),
+    ave_Negative_statements_33=mean(Negative_statements_33),
+    ave_Offensive_expressions_34=mean(Offensive_expressions_34),
+    ave_Insult_35=mean(Insult_35),
+    ave_Humiliate_36=mean(Humiliate_36),
+    ave_Not_calm_37=mean(Not_calm_37),
+    ave_Hate_opening_38=mean(Hate_opening_38),
+    ave_Discussion_sudden_39=mean(Discussion_sudden_39),
+    ave_Starting_idk_40=mean(Starting_idk_40),
+    ave_Calm_breaks_41=mean(Calm_breaks_41),
+    ave_Argue_leave_42=mean(Argue_leave_42),
+    ave_Silent_calm_43=mean(Silent_calm_43),
+    ave_Good_leave_44=mean(Good_leave_44),
+    ave_Stay_silent_45=mean(Stay_silent_45),
+    ave_Silent_hurt_46=mean(Silent_hurt_46),
+    ave_Silence_anger_47=mean(Silence_anger_47),
+    ave_Im_right_48=mean(Im_right_48),
+    ave_Accused_49=mean(Accused_49),
+    ave_Not_guilty_50=mean(Not_guilty_50),
+    ave_Not_wrong_51=mean(Not_wrong_51),
+    ave_Tell_inadequacy_52=mean(Tell_inadequacy_52),
+    ave_Remind_inadequacy_53=mean(Remind_inadequacy_53),
+    ave_Tell_incompetence_54=mean(Tell_incompetence_54))%>%
+  filter(Marital_Status== "divorced")
+
+divorced_arguments_score<- rowMeans(divorced_arguments[,c("ave_Argue_aggressive_31", "ave_Always_never_32", "ave_Negative_statements_33","ave_Offensive_expressions_34", "ave_Insult_35", "ave_Humiliate_36", "ave_Not_calm_37", "ave_Hate_opening_38", "ave_Discussion_sudden_39", "ave_Starting_idk_40", "ave_Calm_breaks_41", "ave_Argue_leave_42", "ave_Silent_calm_43", "ave_Good_leave_44", "ave_Stay_silent_45", "ave_Silent_hurt_46", "ave_Silence_anger_47", "ave_Im_right_48", "ave_Accused_49", "ave_Not_guilty_50", "ave_Not_wrong_51", "ave_Tell_inadequacy_52", "ave_Remind_inadequacy_53", "ave_Tell_incompetence_54")])
+
+#recoding numerical values for Q6 and Q7 to help make scoring consistent
+divorce$No_home_time_6<- recode(divorce$No_home_time_6,
+                                `0`= 4,
+                                `1`=3,
+                                `2`=2,
+                                `3`=1,
+                                `4`=0)
+
+divorce$Strangers_7<-recode(divorce$Strangers_7,
+                            `0`= 4,
+                            `1`=3,
+                            `2`=2,
+                            `3`=1,
+                            `4`=0)
+#average scores for "Time together"
+married_time<- group_by(divorce, Marital_Status)%>%
+  summarize(
+    ave_Time_special_5=mean(Time_special_5),
+    ave_No_home_time_6=mean(No_home_time_6),
+    ave_Strangers_7=mean(Strangers_7),
+    ave_Enjoy_holiday_8=mean(Enjoy_holiday_8),
+    ave_Enjoy_travel_9=mean(Enjoy_travel_9))%>%
+  filter(Marital_Status=="married")
+
+married_time_score<-rowMeans(married_time[,c("ave_Time_special_5","ave_No_home_time_6","ave_Strangers_7","ave_Enjoy_holiday_8","ave_Enjoy_travel_9")])
+
+divorced_time<- group_by(divorce, Marital_Status)%>%
+  summarize(
+    ave_Time_special_5=mean(Time_special_5),
+    ave_No_home_time_6=mean(No_home_time_6),
+    ave_Strangers_7=mean(Strangers_7),
+    ave_Enjoy_holiday_8=mean(Enjoy_holiday_8),
+    ave_Enjoy_travel_9=mean(Enjoy_travel_9))%>%
+  filter(Marital_Status=="divorced")
+
+divorced_time_score<-rowMeans(divorced_time[,c("ave_Time_special_5","ave_No_home_time_6","ave_Strangers_7","ave_Enjoy_holiday_8","ave_Enjoy_travel_9")])
+
+
+#Creating Total Data frames for each category
+knowledge_scores<-rbind(divorced_knowledge, married_knowledge)
+goals_scores<-rbind(divorced_goals, married_goals)
+arguments_scores<-rbind(divorced_arguments,married_arguments)
+time_scores<-rbind(divorced_time,married_time)
+
+#all scores graph
+all_scores<- data.frame(
+  Category = rep(c("Hostility of Arguments","Similarity of Goals & Values","Knowledge of Spouse","Positive Time Together"), each=2),
+  Marital_Status = rep(c("Married", "Divorced"), times=4),
+  Score = c(0.954,3.404,0.252,2.988,0.163,2.742,1.581,2.919)
+  )
+
+ggplot(all_scores, 
+       aes(x=Category, y=Score,fill=Marital_Status))+
+  geom_bar(stat="identity", position= "dodge")+
+  scale_fill_manual(values = c("Divorced"="#400850","Married"="#9444AB"))+
+  labs(title="All Scores")+
+  coord_flip()
+
+#time graph of averages
+time2<- data.frame(
+  Question = rep(c("ave_Time_special_5", "ave_No_home_time_6","ave_Strangers_7","ave_Enjoy_holiday_8","ave_Enjoy_travel_9"), each=2),
+  Marital_Status=rep(c("Married", "Divorced"), times= 5),
+  Average=c(	
+    0.1046512,3.011905,3.627907,2.869048,3.988372,3.011905,0.127907,2.809524,0.05813953,2.892857))
+
+ggplot(time2, 
+       aes(x=Question, y=Average,fill=Marital_Status))+
+  geom_bar(stat="identity", position= "dodge")+
+  scale_fill_manual(values = c("Divorced"="#400850","Married"="#9444AB"))+
+  labs(title="Positive Time Together")+
+  coord_flip()
+
+#knowledge graph of averages
+knowledge2<- data.frame(
+  Question = rep(c("ave_likes_21","ave_Care_sick_22","ave_Fav_food_23","ave_Stresses_24","ave_Inner_world_25","ave_Anxieties_26","ave_Current_sources_stress_27","ave_Hopes_wishes_28","ave_Know_well_29","ave_Friends_social_30"), each=2),
+  Marital_Status=rep(c("Married", "Divorced"), times=10),
+  Average= c(0.1511628,2.654762,0.06976744,2.452381,0.08139535,2.77381,0.2674419,2.785714,0.3372093,2.952381,0.1976744,2.809524,0.1511628,2.678571,0.08139535,2.559524,0.09302326,2.928571,0.1976744,2.821429))
+
+ggplot(knowledge2, 
+       aes(x=Question, y=Average,fill=Marital_Status))+
+  geom_bar(stat="identity", position= "dodge")+
+  scale_fill_manual(values = c("Divorced"="#400850","Married"="#9444AB"))+
+  labs(title="Knowledge of Spouse")+
+  coord_flip()
+
+#goals graph of averages
+names(goals_scores)
+goals2<- data.frame(
+  Question = rep(c("ave_Common_goals_10","ave_Harmony_11","ave_Freedom_12","ave_Entertainment_13","ave_People_goals_14","ave_Dreams_15","ave_Love_16","ave_Happy_17","ave_Marriage_18","ave_Roles_19","ave_Trust_20"), each=2),
+  Marital_Status=rep(c("Married", "Divorced"), times=11),
+  Average= c(0.4069767,2.7738095,0.1976744,3.2142857,0.3953488,2.9404762,0.6046512,3.0952381,0.2906977,2.8809524,0.2325581,2.9404762,0.1627907,2.8214286,0.1744186,3.1666667,0.09302326,2.97619048,0.1395349,3.1785714,0.06976744,2.88095238)) 
+
+ggplot(goals2, 
+       aes(x=Question, y=Average,fill=Marital_Status))+
+  geom_bar(stat="identity", position= "dodge")+
+  scale_fill_manual(values = c("Divorced"="#400850","Married"="#9444AB"))+
+  labs(title="Similarity of Goals & Values")+
+  coord_flip()
+
+#arguments graph of averages
+names(arguments_scores)
+arguments2<- data.frame(
+  Question = rep(c("ave_Argue_aggressive_31","ave_Always_never_32","ave_Negative_statements_33","ave_Offensive_expressions_34","ave_Insult_35","ave_Humiliate_36","ave_Not_calm_37","ave_Hate_opening_38","ave_Discussion_sudden_39","ave_Starting_idk_40","ave_Calm_breaks_41","ave_Argue_leave_42","ave_Silent_calm_43","ave_Good_leave_44","ave_Stay_silent_45","ave_Silent_hurt_46","ave_Silence_anger_47","ave_Im_right_48","ave_Accused_49","ave_Not_guilty_50","ave_Not_wrong_51","ave_Tell_inadequacy_52","ave_Remind_inadequacy_53","ave_Tell_incompetence_54"), each=2),
+  Marital_Status=rep(c("Married", "Divorced"), times=24),
+  Average= c(0.8372093,3.4404762,0.7325581,3.4166667,0.2906977,3.3571429,0.5581395,3.2738095,0.1046512,3.2738095,0.03488372,3.21428571,0.627907,3.583333,0.3488372,3.4047619,0.5697674,3.6428571,0.2093023,3.5714286,0.4767442,3.5476190,1.011628,3.333333,1.953488,3.476190,0.5348837,3.38095243,1.651163,3.285714,1.953488,3.166667,1.244186,3.321429,2.046512,3.452381,1.279070,3.511905,1.383721,3.500000,1.616279,3.357143,1.569767,3.488095,1.186047,3.321429,0.6860465,3.3690476))
+
+ggplot(arguments2, 
+       aes(x=Question, y=Average,fill=Marital_Status))+
+  geom_bar(stat="identity", position= "dodge")+
+  scale_fill_manual(values = c("Divorced"="#400850","Married"="#9444AB"))+
+  labs(title="Hostility of Arguments")+
+  coord_flip()
+
+```
+
+Introduction
+===
+
+Column {data-width=450}
+---
+### Title & Description
+**"An Analysis of Factors that are associated with Marriage & Divorce"**
+
+In this analysis, we will use the "Predicting Divorce" dataset found in Kaggle (https://www.kaggle.com/datasets/csafrit2/predicting-divorce?select=divorce.csv) to explore two questions.
+
+The data involves the responses of 170 couples to a set of 54 prompts where they were asked to assign a number value from zero (0) to four (4) to the prompt. Zero indicates "never" and 4 indicates "always". For this analysis, the 54 prompts were organized into categories of "Knowledge", "Goals & Values", "Time", and "Arguments".
+
+### Background
+The data for this analysis originally comes from a study done in Turkey in 2019 that surveyed 170 couples, 84 were divorced and 86 were married couples.
+
+Original Source:
+Yöntem, M , Adem, K , İlhan, T , Kılıçarslan, S. (2019). DIVORCE PREDICTION USING CORRELATION BASED FEATURE SELECTION AND ARTIFICIAL NEURAL NETWORKS. Nevşehir Hacı Bektaş Veli University SBE Dergisi, 9 (1), 259-273. https://dergipark.org.tr/tr/download/article-file/748448 
+
+Column {data-width=550}
+---
+
+### Research Questions
+*1.What statement responses correlate most strongly and most positively with whether a couple is divorced? What factors are the strongest predictors of divorce?*
+
+*2.What statement responses correlate most strongly and most positively with whether a couple is married? What factors are the strongest predictors of marriage?*
+
+### 
+
+<img src="/Users/angelrivera/Desktop/MTH 209/Final Project/il_570xN.3489083404_mvs8.jpg.webp" alt="Alt text" width="300" height="300" />
+
+Dataset
+===
+Column {data-width=400}
+---
+### Question Key
+```{r, show_questions}
+datatable(divorce_text, options=list(pageLength=54))
+```
+
+
+Column {data-width=600}
+---
+### Survey Data
+```{r, show_table}
+datatable(divorce, options=list(pageLength=20))
+```
+
+
+Knowledge
+===
+
+Column {data-width=500}
+---
+
+### Analysis
+***"Knowledge of Spouse"*** : (Items 21-30) 
+
+A higher score is generally better. A higher score indicates that spouses have a higher knowledge of each other.
+
+The first graph indicates that divorced couples tend to have higher scores than married couples in every prompt. This would indicate that, contrary to common expectations, divorced couples have a greater knowledge of their ex-partner than their married counterparts. It is expected originally that married couples would give higher scores for the prompts, showing that they married spouses had higher levels of knowledge of each other. 
+
+The others graphs display distributions of score-responses that couples gave for a particular prompt.
+
+### Question Key
+0: "Never" -- 4: "Always" 
+
+```{r}
+datatable(knowledge_text, options=list(pageLength=10))
+```
+
+Column {.tabset data-width=500}
+---
+### Knowledge of Spouse
+```{r}
+ggplot(knowledge2, 
+       aes(x=Question, y=Average,fill=Marital_Status))+
+  geom_bar(stat="identity", position= "dodge")+
+  scale_fill_manual(values = c("Divorced"="#33b047","Married"="#005e0f"))+
+  labs(title="Knowledge of Spouse")+
+  coord_flip()
+```
+
+### Prompt 22
+```{r}
+ggplot(divorce,
+       aes(x=Marital_Status, fill=as.character(Care_sick_22)))+
+  geom_bar(position="dodge")+
+  labs(title="Prompt 22:", subtitle="I know how my spouse wants to be taken care of when she/he sick.",fill="", x="Marital Status", y="number of responses")+
+  scale_fill_brewer(palette = 2)
+```
+
+### Prompt 26
+```{r}
+ggplot(divorce,
+       aes(x=Marital_Status, fill=as.character(Anxieties_26)))+
+  geom_bar(position="dodge")+
+  labs(title="Prompt 26:", subtitle="I know my spouse's basic anxieties.",fill="", x="Marital Status", y="number of responses")+
+  scale_fill_brewer(palette = 2)
+```
+
+### Prompt 25
+```{r}
+ggplot(divorce,
+       aes(x=Marital_Status, fill=as.character(Inner_world_25)))+
+  geom_bar(position="dodge")+
+  labs(title="Prompt 25:", subtitle="I have knowledge of my spouse's inner world.", fill="", x="Marital Status", y="number of responses")+
+  scale_fill_brewer(palette = 2)
+```
+
+
+Goals & Values
+===
+
+Column {data-width=500}
+---
+
+### Analysis
+***"Similarity of Goals & Values"*** : (Items 10-20 excluding 11*)
+
+A higher score is generally better, indicating that spouses have more similar goals and values.
+
+Similarly to the graph of averaged time scores, the first graph here also indicates that divorced couples had greater similarity in their goals and values than married couples in the study. This is also a surprising finding.
+
+The following graphs display distributions of score-responses that couples gave for a particular prompt. Something to note, nearly all of the married couples responded with a score of '0' to Prompt 20.
+
+*Note: Item 11-- "Harmony_11"-- was excluded from this grouping because it did not fit with the theme of the rest of the prompts*
+
+### Question Key
+0: "Never" -- 4: "Always" 
+
+```{r}
+datatable(goals_text, options=list(pageLength=11))
+```
+
+Column {.tabset data-width=500}
+---
+### Similarity of Goals & Values
+```{r}
+ggplot(goals2, 
+       aes(x=Question, y=Average,fill=Marital_Status))+
+  geom_bar(stat="identity", position= "dodge")+
+  scale_fill_manual(values = c("Divorced"="#db693c","Married"="#7a2300"))+
+  labs(title="Similarity of Goals & Values")+
+  coord_flip()
+```
+
+### Prompt 20
+```{r}
+ggplot(divorce,
+       aes(x=Marital_Status, fill=as.character(Trust_20)))+
+  geom_bar(position="dodge")+
+  labs(title= "Prompt 20:", subtitle= "My spouse and I have similar values in trust.",fill="", x="Marital Status", y="number of responses")+
+  scale_fill_brewer(palette = "YlOrBr")
+```
+
+### Prompt 10
+```{r}
+ggplot(divorce,
+       aes(x=Marital_Status, fill=as.character(Common_goals_10)))+
+  geom_bar(position="dodge")+
+  labs(title= "Prompt 10:", subtitle= "Most of our goals are common to my spouse.",fill="", x="Marital Status", y="number of responses")+
+  scale_fill_brewer(palette = "YlOrBr")
+```
+
+### Prompt 13
+```{r}
+ggplot(divorce,
+       aes(x=Marital_Status, fill=as.character(Entertainment_13)))+
+  geom_bar(position="dodge")+
+  labs(title= "Prompt 13:", subtitle= "My spouse and I have similar sense of entertainment.", fill="", x="Marital Status", y="number of responses")+
+  scale_fill_brewer(palette = "YlOrBr")
+```
+
+
+Time
+===
+
+Column {data-width=500}
+---
+
+### Analysis
+***"Positivity of Time together"*** : (Items 5-9)
+
+A higher score is generally better, indicating that spouses feel they have enough time together and that the time is positively viewed.
+
+Again, the first graph displays the averaged scores of the prompts that were part of this category. Something to note is that for two of the prompts, 40% of them in this case, married couples gave higher scores, something that has not shown in any of the two previous categories of "Knowledge" and "Goals & Values". However in the majority of the prompts, 60%, divorced couples still gave higher scores for the prompts.
+
+The following graphs display distributions of score-responses that couples gave for a particular prompt. Again, the graphs for prompts 6 and 7 show distributions that sway the averages for married couples towards higher scores, an anomaly
+
+### Question Key
+0: "Never" -- 4: "Always" 
+
+```{r}
+datatable(time_text, options=list(pageLength=5))
+```
+
+*Note: Prompt 7 was changed from, "We don't have time at home as partners" to its current wording. Prompt 6 was changed from, "We are like two strangers who share the same environment at home rather than family. Higher is bad" to its current wording. This adjustment was done to create consistency in how higher or lower scores were evaluated as either good or bad.*
+
+Column {.tabset data-width=500}
+---
+### Positivity of Time Together
+```{r}
+ggplot(time2, 
+       aes(x=Question, y=Average,fill=Marital_Status))+
+  geom_bar(stat="identity", position= "dodge")+
+  scale_fill_manual(values = c("Divorced"="#3284b3","Married"="#0f48a3"))+
+  labs(title="Positivity of Time Together")+
+  coord_flip()
+```
+
+### Prompt 7
+```{r}
+ggplot(divorce,
+       aes(x=Marital_Status, fill=as.character(Strangers_7)))+
+  geom_bar(position="dodge")+
+  labs(title="Prompt 7:", subtitle="We are family at home rather than strangers who share the same environment at home.", fill="", x="Marital Status", y="number of responses")+
+  scale_fill_brewer(palette = 1)
+```
+
+### Prompt 6
+```{r}
+ggplot(divorce,
+       aes(x=Marital_Status, fill=as.character(No_home_time_6)))+
+  geom_bar(position="dodge")+
+  labs(title="Prompt 6:", subtitle="We have time at home as partners.", fill="", x="Marital Status", y="number of responses")+
+  scale_fill_brewer(palette = 1)
+```
+
+### Prompt 9
+```{r}
+ggplot(divorce,
+       aes(x=Marital_Status, fill=as.character(Enjoy_travel_9)))+
+  geom_bar(position="dodge")+
+  labs(title="Prompt 9:", subtitle="I enjoy traveling with my wife.", fill="", x="Marital Status", y="number of responses")+
+  scale_fill_brewer(palette = 1)
+```
+
+
+Arguments
+===
+
+Column {data-width=500}
+---
+
+### Analysis
+***"Hostility of Arguments"*** (Items 31-54) 
+
+This category is different than the other ones in that a higher score is generally worse. A higher score indicates that arguments are more hostile and unproductive according to the wording of the question. 
+
+The first graph shows that divorced couples had higher averages than still married couples, indicating that divorced couples have more hostile arguments than married couples. It is interesting to see that this category is the only one where married couples seem to have a better handle on the relationship than divorced couples. 
+
+The following graphs display distributions of score-responses that couples gave for a particular prompt. For prompt 46, there seems to be a pretty even spread for the distribution of scores for the married couples, though still having a lower average than the divorced couples. The graph for prompt 36 also shows that almost all married couples "never" humiliate their spouse in arguments.
+
+### Question Key
+0: "Never" -- 4: "Always" 
+
+```{r}
+datatable(arguments_text, options=list(pageLength=24))
+```
+
+Column {.tabset data-width=500}
+---
+### Hostility of Arguments
+```{r}
+ggplot(arguments2, 
+       aes(x=Question, y=Average,fill=Marital_Status))+
+  geom_bar(stat="identity", position= "dodge")+
+  scale_fill_manual(values = c("Divorced"="#f04f33","Married"="#a61900"))+
+  labs(title="Hostility of Arguments")+
+  coord_flip()
+```
+
+### Prompt 37 Graph
+```{r}
+ggplot(divorce,
+       aes(x=Marital_Status, fill=as.character(Not_calm_37)))+
+  geom_bar(position="dodge")+
+  labs(title="Prompt 37:", subtitle= "My discussion with my spouse is not calm.",fill="", x="Marital Status", y="number of responses")+
+  scale_fill_brewer(palette = "OrRd")
+```
+
+### Prompt 36 Graph
+```{r}
+ggplot(divorce,
+       aes(x=Marital_Status, fill=as.character(Humiliate_36)))+
+  geom_bar(position="dodge")+
+  labs(title="Prompt 36:", subtitle= "I can be humiliating when we discussions.", fill="", x="Marital Status", y="number of responses")+
+  scale_fill_brewer(palette = "OrRd")
+```
+
+### Prompt 46 Graph
+```{r}
+ggplot(divorce,
+       aes(x=Marital_Status, fill=as.character(Silent_hurt_46)))+
+  geom_bar(position="dodge")+
+  labs(title= "Prompt 46:", subtitle= "Even if I'm right in the discussion, I stay silent to hurt my spouse", fill="", x="Marital Status", y="number of responses")+
+  scale_fill_brewer(palette = "OrRd")
+```
+
+Summary
+===
+
+Column {data-width=500}
+--- 
+### Summary
+As we have seen, The average scores for every category are greater for divorced couples than married couples. The graph to the right displays the averaged scores for all the questions for each category to create overall scores of how married and divorced couples responded to prompts for an overall category. For "Similarity of Goals & Values", "Positive Time Together", and "Knowledge of Spouse", it seems contrary to expectations that divorced couples would give overall higher responses in these categories. The only category that follows an expected trend is "Hostility of Arguments", since it seems reasonable that higher levels of hostility in conflict between partners would lead to separation, and couples that are able to argue well would build stronger relationships and stay together.
+
+Column {.tabset data-width=500}
+---
+### Graph
+```{r, all_scores_graph}
+bar1<-ggplot(all_scores, 
+       aes(x=Category, y=Score,fill=Marital_Status))+
+  geom_bar(stat="identity", position= "dodge")+
+  scale_fill_manual(values = c("Divorced"="#400850","Married"="#9444AB"))+
+  labs(title="All Scores")+
+  coord_flip()
+ggplotly(bar1)
+```
+
+### Table
+```{r, }
+datatable(all_scores)
+```
+
+Conclusion
+===
+
+Column {data-width=500}
+---
+
+### 1. Why does the data show this way?
+Why would the data show this way? Why does it seem to indicate that couples that know each other well, spend more quality time together, and have greater similarity in their life goals and values seem to be the ones that end up divorcing each other? Are the factors that seem like the makings of a good relationship and marriage actually a recipe for divorce? Should people avoid actually getting to know their partners?
+
+### 2. Limitations
+
+For starters, this study comes from a study done in Turkey, where standards, expectations, and values of marriage may be very different. The Turkish study utilizes the Gottman Divorce Predictor Scale for its prompts, a tool that was designed by an American psychologist, John Gottman, that may more closely align to western values of marriage. Something very important to note, is that the original study reports that 74 (43.5%) of the couples participating were married "for love", and 96 (56.5%) of the couples were married in an arranged marriage. That seems like relevant information that should have been included in the data set that unfortunately is left out. For analysis purposes, it would have been very interesting to know which of the responses were from couples of arranged marriages or couples that had been married for love. The study also reports lots of variability in whether couples had children, the income levels of the couples, and the education levels of the couples. This would have all been interesting information to include in the data set for further analysis.
+
+Column {data-width=500}
+---
+
+### 3. Future study
+As mentioned, it would be very interesting to look at the relationship between the marital status of couples and things like income level, whether they had children or not, the number of children they had, (for Turkey and similar cultures) whether the marriages was arranged or not, and the religion of the couples. 
+
+Another aspect to look at is the satisfaction of life of the individuals in marriages compared to individuals who are divorced. To be honest, a marriage where I don't know my spouse, don't share goals and values in life, and don't enjoy quality time with her sounds pretty miserable. Considering the data, it would be interesting to see whether married couples feel satisfied with their life considering the factors of their marriage-- not haveing a high knowledge of their spouse, etc.
+
+### 4. What does this all mean? 
+According to this data, should you avoid getting to know your partner well and spending quality time with them out of fear of divorce? I would say, "No". A good friendship, and a good marriage, requires these things. Even if a couple stays together, under the circumstances of the married couples described by the data, it does not necessarily mean they have a good marriage. I would say that you should strive to find a parnter with similar goals and values, spend enjoyable quality time with them, get to know them significantly, and argue well with them in order to build a *good* friendship and a *good* marriage. Whether that marriage stays together depends on the commitment of the spouses.
+
+Author 
+===
+Column{data-width=500}
+---
+
+### About the author
+
+My name is Angel Rivera-Martinez and I am a senior Psychology major at the University of Dayton. My research interests are psychology of religion & spirituality and evaluating prayer, virtue, and prosocial behavior through a psychological lens. This particular project showed my interest in an issue of our contemporary society, marriage and divorce. 
+
+It's a pretty common statistic now that half of marriages in the U.S. end in divorce. I am interested in looking at what kinds of factors contribute to a couple staying married and what contributes to divorce. Good marriages and family life is an important part of a healthy society and much of that is under threat, demonstrated by such high divorce rates in our culture.
+
+I am interested in getting a master's degree in theology and then a doctoral degree in psychology to pursue a career in integrating psychology and religion, either in clinical practice or experimental research.
+
+Outside of my academics, I enjoy spending time with my sisters, reading, prayer, coffee chats with my friends, and watching and competing in sports.
+
+
+
+Column{data-width=500}
+---
+###
+
+<img src="/Users/angelrivera/Desktop/MTH 209/Final Project/IMG_4066.JPG" alt="Alt text" width="500" />
